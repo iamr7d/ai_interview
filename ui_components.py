@@ -1,16 +1,5 @@
 import streamlit as st
 
-def setup_page_config():
-    """Set up the initial page configuration"""
-    st.set_page_config(
-        page_title="AI Interview Assistant",
-        page_icon="🤖",
-        layout="centered",
-        menu_items={
-            'About': 'AI Interview Assistant - Your virtual interviewing companion'
-        }
-    )
-
 def apply_custom_css():
     """Apply custom CSS styles for better UI"""
     st.markdown("""
@@ -32,10 +21,12 @@ def apply_custom_css():
 
 def add_security_headers():
     """Add security-related HTML headers"""
+    # Add HTML meta tags for security
     st.markdown("""
         <meta charset="utf-8">
-        <meta http-equiv="X-Content-Type-Options" content="nosniff">
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
         """, unsafe_allow_html=True)
 
 def display_header(current_question=None, interview_stage="initial"):

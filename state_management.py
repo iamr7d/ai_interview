@@ -1,35 +1,37 @@
 import streamlit as st
 
 def initialize_session_state():
-    """Initialize all session state variables"""
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    
-    if "interview_stage" not in st.session_state:
-        st.session_state.interview_stage = "initial"
-    
-    if "current_question" not in st.session_state:
-        st.session_state.current_question = 0
-    
-    if "interview_questions" not in st.session_state:
-        st.session_state.interview_questions = None
-    
-    if "candidate_info" not in st.session_state:
-        st.session_state.candidate_info = {
-            "name": "",
-            "position": "",
-            "requirements": ""
+    """Initialize all session state variables with proper error handling"""
+    try:
+        default_states = {
+            "messages": [],
+            "interview_stage": "initial",
+            "current_question": 0,
+            "interview_questions": None,
+            "candidate_info": {
+                "name": "",
+                "position": "",
+                "requirements": ""
+            },
+            "analytics": {
+                "emotion": [],
+                "technical_score": 0,
+                "behavioral_score": 0,
+                "communication_score": 0,
+                "confidence_score": 0,
+                "experience_alignment": 0
+            },
+            "error": None
         }
-    
-    if "analytics" not in st.session_state:
-        st.session_state.analytics = {
-            "emotion": [],
-            "technical_score": 0,
-            "behavioral_score": 0,
-            "communication_score": 0,
-            "confidence_score": 0,
-            "experience_alignment": 0
-        }
+        
+        for key, value in default_states.items():
+            if key not in st.session_state:
+                st.session_state[key] = value
+                
+    except Exception as e:
+        st.error(f"Failed to initialize session state: {str(e)}")
+        st.session_state.error = str(e)
+        st.stop()
 
 def update_candidate_info(name, position, requirements):
     """Update candidate information in session state"""
