@@ -1,4 +1,5 @@
 import streamlit as st
+from job_data import job_positions, skills_by_position
 
 # Set up page configuration as the first Streamlit command
 st.set_page_config(
@@ -55,15 +56,21 @@ if not st.session_state.interview_questions:
         with col1:
             name = st.text_input("Your Name 👤", key="name_input", autocomplete="name", help="Enter your full name")
         with col2:
-            position = st.text_input("Position Applied For 💼", key="position_input", autocomplete="organization-title", help="Enter the job position you're applying for")
+            position = st.selectbox("Position Applied For 💼", options=job_positions, key="position_input", help="Select the job position you're applying for")
         
-        requirements = st.text_area("Key Job Requirements 📝", 
-            key="requirements_input",
-            help="List the main requirements for the position",
-            placeholder="Enter key job requirements here")
+        if position:
+            selected_skills = st.multiselect(
+                "Select Required Skills 🎯",
+                options=skills_by_position[position],
+                default=skills_by_position[position][:3],
+                help="Select the required skills for the position"
+            )
+            requirements = ", ".join(selected_skills)
+        else:
+            requirements = ""
         
         if st.button("Begin Interview 🎯", help="Click to start the interview process"):
-            if not name or not position or not requirements:
+            if not name or not position or not selected_skills:
                 st.error("Please fill in all required fields before starting the interview.")
             else:
                 try:
@@ -88,9 +95,43 @@ if st.session_state.interview_questions:
     st.progress(progress / 100)
     st.markdown(f"Question {min(st.session_state.current_question, 10)}/10")
     
-    st.info(st.session_state.interview_questions)
+    # Display current question and its sub-questions
+    current_questions = st.session_state.interview_questions.get('questions', [])
+    if 0 <= st.session_state.current_question < len(current_questions):
+        current_q = current_questions[st.session_state.current_question]
+        
+        # Display category
+        st.subheader(f"Category: {current_q['category']}")
+        
+        # Display main question
+        st.write("**Main Question:**")
+        st.info(current_q['main_question'])
+        
+        # Display sub-questions
+        st.write("**Follow-up Questions:**")
+        for i, sub_q in enumerate(current_q['sub_questions'], 1):
+            st.write(f"{i}. {sub_q}")
     
     # Voice input section
+    if st.button("🎤 Start Speaking", help="Click to start speaking your answer"):
+        user_response = continuous_listening()
+        if user_response:
+            add_message("user", user_response)
+            with st.spinner("Analyzing your response..."):
+                try:
+                    llm_response = get_llm_response(user_response)
+                    if llm_response:
+                        add_message("assistant", llm_response)
+                        text_to_speech(llm_response)
+                        if increment_question():
+                            st.success("Interview completed! Thank you for your time.")
+                            st.balloons()
+                            display_analytics()
+                        else:
+                            st.rerun()
+                except Exception as e:
+                    st.error(f"Error processing response: {str(e)}")
+
     col1, col2 = st.columns([3, 1])
     with col1:
         if st.button("🎤 Click to Answer", key="voice_button", help="Click to start voice recording"):

@@ -61,13 +61,32 @@ def generate_interview_questions(candidate_info_str):
         The candidate's name is {candidate_info['name']}.
         Job Requirements: {candidate_info['requirements']}
         
+        For each main question, generate 2-3 relevant sub-questions that dive deeper into the topic.
         Format the questions into these categories:
-        1. Introduction (2 questions)
-        2. Technical Skills (3 questions)
-        3. Behavioral (3 questions)
-        4. Role-specific (2 questions)
+        1. Introduction (2 main questions)
+        2. Technical Skills (3 main questions)
+        3. Behavioral (3 main questions)
+        4. Role-specific (2 main questions)
         
-        Return the questions as a formatted list with categories."""
+        IMPORTANT: Your response must be a valid JSON string with exactly this structure:
+        {
+            "questions": [
+                {
+                    "category": "Introduction",
+                    "main_question": "Tell me about your background and experience.",
+                    "sub_questions": [
+                        "What aspects of your previous roles are most relevant to this position?",
+                        "How has your education prepared you for this role?"
+                    ]
+                }
+            ]
+        }
+        
+        Ensure to:
+        1. Use proper JSON formatting with double quotes for all strings
+        2. Include exactly 10 questions total across all categories
+        3. Each main question must have 2-3 sub-questions
+        4. Follow the category distribution specified above"""
         
         if not client:
             raise Exception("LLM client not initialized properly")
@@ -82,11 +101,41 @@ def generate_interview_questions(candidate_info_str):
         if not completion or not completion.choices:
             raise Exception("No response received from LLM")
             
-        questions = completion.choices[0].message.content
-        if not questions or len(questions.strip()) == 0:
+        questions = completion.choices[0].message.content.strip()
+        if not questions:
             raise Exception("Empty response received from LLM")
             
-        return questions
+        # Parse the JSON response with better error handling
+        try:
+            # First, ensure we're working with valid JSON string
+            questions = questions.replace("'", "\"")  # Replace single quotes with double quotes
+            questions = questions.strip()
+            if not questions.startswith('{'):
+                # Try to find the JSON object start
+                start_idx = questions.find('{')
+                if start_idx != -1:
+                    questions = questions[start_idx:]
+                else:
+                    raise Exception("Invalid JSON format: No object start found")
+            
+            questions_data = json.loads(questions)
+            
+            # Validate the response structure
+            if not isinstance(questions_data, dict) or 'questions' not in questions_data:
+                raise Exception("Invalid response format: Missing 'questions' key")
+                
+            if not isinstance(questions_data['questions'], list):
+                raise Exception("Invalid response format: 'questions' must be an array")
+                
+            for q in questions_data['questions']:
+                if not all(key in q for key in ['category', 'main_question', 'sub_questions']):
+                    raise Exception("Invalid question format: Missing required fields")
+                    
+            return questions_data
+            
+        except json.JSONDecodeError as e:
+            raise Exception(f"Failed to parse questions response as JSON: {str(e)}")
+            
     except json.JSONDecodeError as e:
         st.error(f"Invalid candidate info format: {str(e)}")
         return None

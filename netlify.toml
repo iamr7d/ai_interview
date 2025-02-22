@@ -1,17 +1,25 @@
 [build]
 base = "/"
-command = "pip install -r requirements.txt && streamlit run main.py"
 publish = "public"
+command = """
+  apt-get update && \
+  apt-get install -y python3-dev portaudio19-dev && \
+  python -m pip install --upgrade pip && \
+  pip install wheel setuptools python-distutils-extra && \
+  pip install -r requirements.txt && \
+  mkdir -p public && \
+  python -m streamlit run main.py --server.port $PORT
+"""
 functions = "netlify/functions"
 
 [build.environment]
-PYTHON_VERSION = "3.9"
+PYTHON_VERSION = "3.11"
 GROQ_API_KEY = "${GROQ_API_KEY}"
 NODE_VERSION = "16"
 
 [[redirects]]
 from = "/*"
-to = "/.netlify/functions/server"
+to = "/"
 status = 200
 force = true
 
@@ -26,10 +34,10 @@ command = "streamlit run main.py"
 targetPort = 8501
 port = 8888
 publish = "public"
-autoLaunch = true
+autoLaunch = false
 
 [build.processing]
-skip_processing = false
+skip_processing = true
 
 [build.processing.css]
 bundle = true
