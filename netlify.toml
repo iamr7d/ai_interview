@@ -1,11 +1,46 @@
 [build]
+base = "/"
 command = "pip install -r requirements.txt && streamlit run main.py"
 publish = "public"
+functions = "netlify/functions"
 
 [build.environment]
 PYTHON_VERSION = "3.9"
+GROQ_API_KEY = "${GROQ_API_KEY}"
+NODE_VERSION = "16"
 
 [[redirects]]
 from = "/*"
-to = "/index.html"
+to = "/.netlify/functions/server"
 status = 200
+force = true
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+
+[dev]
+command = "streamlit run main.py"
+targetPort = 8501
+port = 8888
+publish = "public"
+autoLaunch = true
+
+[build.processing]
+skip_processing = false
+
+[build.processing.css]
+bundle = true
+minify = true
+
+[build.processing.js]
+bundle = true
+minify = true
+
+[build.processing.html]
+pretty_urls = true
+
+[build.processing.images]
+compress = true
